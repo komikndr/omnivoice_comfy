@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-include src/omnivoice_comfy/assets *
+
+recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
+recursive-include web/docs *.md
+

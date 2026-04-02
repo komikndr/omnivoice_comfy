@@ -1,0 +1,9 @@
+{
+  "feature_extractor_type": "DacFeatureExtractor",
+  "feature_size": 1,
+  "hop_length": 960,
+  "padding_side": "right",
+  "padding_value": 0.0,
+  "return_attention_mask": true,
+  "sampling_rate": 24000
+}
