@@ -72,3 +72,7 @@ If you use `ref_audio`, you must also provide `ref_text`.
 - If you want voice cloning, install `https://github.com/yuvraj108c/ComfyUI-Whisper` or another similar workflow/pipeline that auto-transcribes the source audio. OmniVoice requires the transcript of the source audio. You can manually transcribe a 3 second clip, but that gets tedious in batch processing.
 - The node uses files from `ComfyUI/models/tts/omnivoice/` and builds a symlinked runtime snapshot.
 - If symlink creation fails on your system, use a full HuggingFace-style OmniVoice folder instead.
+
+## LLM Disclaimer
+- This repo is build with the help of Qwen 3.5 9B and embeddinggemma-300m to store the original code into vector store
+for fast retrieval (most of my time in coding wasted on code repo search)
