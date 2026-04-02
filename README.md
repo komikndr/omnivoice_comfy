@@ -2,7 +2,7 @@
 
 ![Example workflow](doc/Example1.png)
 
-![OmniVoice](doc/omnivoice.jpg)
+<img src="doc/omnivoice.jpg" alt="OmniVoice" width="320">
 
 ComfyUI custom node for OmniVoice TTS and voice cloning.
 
