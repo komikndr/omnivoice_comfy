@@ -26,13 +26,17 @@ Why: some models and libraries might still heavily depend on 4.5X HF Transformer
 
 ## Install
 
-For now:
+Direct manual clone:
 
 1. `git clone https://github.com/komikndr/omnivoice_comfy` inside `ComfyUI/custom_nodes`
 2. `cd omnivoice_comfy`
 3. `pip install -r requirements.txt`
 
-3. Put the OmniVoice weights in `ComfyUI/models/tts/omnivoice/`.
+ComfyUI manager:
+1. `comfy node install omnivoice_comfy`
+
+
+4. Put the OmniVoice weights in `ComfyUI/models/tts/omnivoice/`.
 
 Expected layout:
 
