@@ -3,15 +3,12 @@
 __all__ = [
     "NODE_CLASS_MAPPINGS",
     "NODE_DISPLAY_NAME_MAPPINGS",
-    "WEB_DIRECTORY",
 ]
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 from .src.omnivoice_comfy import runtime
 from .src.omnivoice_comfy.nodes import NODE_CLASS_MAPPINGS
 from .src.omnivoice_comfy.nodes import NODE_DISPLAY_NAME_MAPPINGS
 
 runtime.register_model_path()
-
-WEB_DIRECTORY = "./web"
