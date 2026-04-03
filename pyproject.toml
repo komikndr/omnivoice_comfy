@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omnivoice_comfy"
-version = "0.0.2"
+version = "0.0.3"
 description = "A custom nodes for OmniVoice K2-FSA. A fast TTS diffusion audio model with cloning capabilities, and 600 languages"
 authors = [
   {name = "Micko Lesmana", email = "mickolesmana@gmail.com"}
