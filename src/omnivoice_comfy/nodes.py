@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+
 import torch
 
 from . import runtime
@@ -36,6 +38,13 @@ class OmniVoiceLoader:
             "required": {
                 "OmniVoice Model": (choices,),
                 "Audio Tokenizer Model": (choices,),
+                "Keep model in VRAM": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "tooltip": "Keep the loaded OmniVoice model on the compute device between runs. Disable this to move it back to CPU RAM after each generation.",
+                    },
+                ),
             }
         }
 
@@ -49,6 +58,7 @@ class OmniVoiceLoader:
             omnivoice_model_name=kwargs["OmniVoice Model"],
             audio_tokenizer_model_name=kwargs["Audio Tokenizer Model"],
             weight_dtype="default",
+            keep_in_vram=bool(kwargs["Keep model in VRAM"]),
         )
         return (model,)
 
@@ -125,6 +135,16 @@ class OmniVoiceTTS:
                         "tooltip": "Classifier-Free Guidance scale. The node default is 3.0 for the current tuned baseline; this pushes the result to follow the conditioning more strongly and can change timbre and articulation noticeably.",
                     },
                 ),
+                "seed": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 0x7FFFFFFFFFFFFFFF,
+                        "step": 1,
+                        "tooltip": "Random seed for OmniVoice generation. With the current deterministic defaults this mainly matters if stochastic settings are re-enabled later, but it is exposed for reproducibility and future tuning.",
+                    },
+                ),
                 "t_shift": (
                     "FLOAT",
                     {
@@ -136,20 +156,23 @@ class OmniVoiceTTS:
                     },
                 ),
                 "denoise": (
-                    ("false", "true"),
+                    "BOOLEAN",
                     {
+                        "default": False,
                         "tooltip": "Adds OmniVoice's denoise control token during generation. The node default is disabled because that is currently giving better audio on this setup.",
                     },
                 ),
                 "preprocess_prompt": (
-                    ("true", "false"),
+                    "BOOLEAN",
                     {
+                        "default": True,
                         "tooltip": "Preprocess the reference prompt before tokenization. This can trim long reference audio, remove silences, and normalize the prompt path for voice cloning.",
                     },
                 ),
                 "postprocess_output": (
-                    ("true", "false"),
+                    "BOOLEAN",
                     {
+                        "default": True,
                         "tooltip": "Postprocess the generated audio after decoding. This can remove long silences, normalize level behavior, and add fade/padding to avoid abrupt starts or ends.",
                     },
                 ),
@@ -186,6 +209,7 @@ class OmniVoiceTTS:
         duration,
         num_step,
         cfg,
+        seed,
         t_shift,
         denoise,
         preprocess_prompt,
@@ -199,27 +223,42 @@ class OmniVoiceTTS:
         if ref_audio_tuple is not None and ref_text_value is None:
             raise ValueError("Voice cloning requires ref_text in omnivoice_comfy. Whisper auto-transcription is disabled.")
 
+        runtime.prepare_model_for_inference(model)
         model.model._comfy_progress_node_id = unique_id
 
-        generated = (
-            model.model.generate(
-                text=text,
-                language=_optional_text(language),
-                ref_audio=ref_audio_tuple,
-                ref_text=ref_text_value,
-                instruct=_optional_text(instruct),
-                speed=speed,
-                duration=duration if duration > 0 else None,
-                num_step=num_step,
-                guidance_scale=cfg,
-                t_shift=t_shift,
-                denoise=denoise == "true",
-                preprocess_prompt=preprocess_prompt == "true",
-                postprocess_output=postprocess_output == "true",
-            )[0]
-            .detach()
-            .cpu()
-        )
+        seed = int(seed)
+        rng_devices = []
+        model_device = torch.device(model.device)
+        if model_device.type == "cuda":
+            rng_devices = [model_device]
+
+        try:
+            with torch.random.fork_rng(devices=rng_devices):
+                torch.manual_seed(seed)
+                generated = (
+                    model.model.generate(
+                        text=text,
+                        language=_optional_text(language),
+                        ref_audio=ref_audio_tuple,
+                        ref_text=ref_text_value,
+                        instruct=_optional_text(instruct),
+                        speed=speed,
+                        duration=duration if duration > 0 else None,
+                        num_step=num_step,
+                        guidance_scale=cfg,
+                        t_shift=t_shift,
+                        denoise=bool(denoise),
+                        preprocess_prompt=bool(preprocess_prompt),
+                        postprocess_output=bool(postprocess_output),
+                    )[0]
+                    .detach()
+                    .cpu()
+                )
+        finally:
+            model.model._comfy_progress_node_id = None
+            if not model.keep_in_vram:
+                with contextlib.suppress(Exception):
+                    runtime.offload_model_to_cpu(model)
 
         finite = torch.isfinite(generated)
         if generated.numel() > 0 and not bool(finite.all().item()):

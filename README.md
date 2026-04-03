@@ -12,6 +12,9 @@ Upstream project:
 Download Model Here:
 - https://huggingface.co/k2-fsa/OmniVoice
 
+This node is built with only the necessary model forward core process in mind, so the nodes in this repo are already the final ones.
+I don’t like cluttering ComfyUI with unnecessary node mappings, so updates will only include bug fixes or truly urgent and necessary new nodes. If needed, I will create them.
+
 ## Warning
 
 ### ⚠️ WARNING HF TRANSFORMER 5.3 and ABOVE REQUIRED. ⚠️

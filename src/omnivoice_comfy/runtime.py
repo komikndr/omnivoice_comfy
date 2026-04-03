@@ -38,6 +38,7 @@ class OmniVoiceModelHandle:
     audio_tokenizer_weights: str
     device: str
     dtype: str
+    keep_in_vram: bool
 
     @property
     def sample_rate(self) -> int:
@@ -63,6 +64,7 @@ def load_model_handle(
     omnivoice_model_name: str,
     audio_tokenizer_model_name: str,
     weight_dtype: str = "default",
+    keep_in_vram: bool = True,
 ) -> OmniVoiceModelHandle:
     model_path = _resolve_model_path(omnivoice_model_name)
     audio_tokenizer_path = _resolve_model_path(audio_tokenizer_model_name)
@@ -95,7 +97,28 @@ def load_model_handle(
         audio_tokenizer_weights=audio_tokenizer_path.name,
         device=str(device),
         dtype=str(dtype).replace("torch.", ""),
+        keep_in_vram=keep_in_vram,
     )
+
+
+def prepare_model_for_inference(handle: OmniVoiceModelHandle) -> None:
+    target_device = torch.device(handle.device)
+    target_dtype = getattr(torch, handle.dtype)
+
+    handle.model = handle.model.to(device=target_device, dtype=target_dtype)
+
+    audio_tokenizer_device = torch.device("cpu") if str(target_device).startswith("mps") else target_device
+    handle.model.audio_tokenizer = handle.model.audio_tokenizer.to(
+        device=audio_tokenizer_device,
+        dtype=torch.float32,
+    )
+    handle.model.eval()
+
+
+def offload_model_to_cpu(handle: OmniVoiceModelHandle) -> None:
+    handle.model = handle.model.to(device=torch.device("cpu"), dtype=torch.float32)
+    handle.model.audio_tokenizer = handle.model.audio_tokenizer.to(device=torch.device("cpu"), dtype=torch.float32)
+    comfy.model_management.soft_empty_cache()
 
 
 def build_runtime_snapshot(model_path: Path, audio_tokenizer_path: Path) -> Path:

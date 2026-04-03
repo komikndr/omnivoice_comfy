@@ -8,10 +8,19 @@ def test_loader_metadata():
     assert OmniVoiceLoader.RETURN_TYPES == ("OMNIVOICE_MODEL",)
     assert OmniVoiceLoader.FUNCTION == "load_model"
 
+    input_types = OmniVoiceLoader.INPUT_TYPES()
+    assert input_types["required"]["Keep model in VRAM"][0] == "BOOLEAN"
+
 
 def test_tts_metadata():
     assert OmniVoiceTTS.RETURN_TYPES == ("AUDIO",)
     assert OmniVoiceTTS.FUNCTION == "generate_audio"
+
+    input_types = OmniVoiceTTS.INPUT_TYPES()
+    assert input_types["required"]["denoise"][0] == "BOOLEAN"
+    assert input_types["required"]["preprocess_prompt"][0] == "BOOLEAN"
+    assert input_types["required"]["postprocess_output"][0] == "BOOLEAN"
+    assert input_types["required"]["seed"][0] == "INT"
 
 
 def test_optional_text():
